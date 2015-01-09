@@ -32,13 +32,14 @@ public class ParametersFragment extends Fragment implements View.OnClickListener
     private Spinner busSpinner;
     private EditText dateEditText;
 
-    private OnFragmentInteractionListener mListener;
+    private ParametersFragmentCallBack mListener;
 
     private class DownloadBusLinesTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
             String response = "";
             for (String url : urls) {
+                Log.d("[GET URL]", url);
                 DefaultHttpClient client = new DefaultHttpClient();
                 HttpGet httpGet = new HttpGet(url);
                 try {
@@ -76,60 +77,15 @@ public class ParametersFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    private class DownloadBusHoursTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... urls) {
-            String response = "";
-            for (String url : urls) {
-                DefaultHttpClient client = new DefaultHttpClient();
-                HttpGet httpGet = new HttpGet(url);
-                try {
-                    HttpResponse execute = client.execute(httpGet);
-                    InputStream content = execute.getEntity().getContent();
-
-                    BufferedReader buffer = new BufferedReader(new InputStreamReader(content));
-                    String s = "";
-                    while ((s = buffer.readLine()) != null) {
-                        response += s;
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            return response;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            Log.d("[GET REQUEST]", result);
-            try {
-                JSONObject json = new JSONObject(result);
-                json = json.getJSONObject("A");
-                json = json.getJSONObject("2|Montrouge : Vache Noire:1");
-                Log.i("[JSON]", json.toString(4));
-            } catch (JSONException e) {
-                Log.e("[JSON]", "Error parsing JSON", e);
-            }
-        }
-    }
-
     public ParametersFragment() {
         // Required empty public constructor
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
-            mListener = (OnFragmentInteractionListener) activity;
+            mListener = (ParametersFragmentCallBack) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
                     + " must implement OnFragmentInteractionListener");
@@ -180,8 +136,8 @@ public class ParametersFragment extends Fragment implements View.OnClickListener
     }
 
 
-    public interface OnFragmentInteractionListener {
-        public void onFragmentInteraction(Uri uri);
+    public interface ParametersFragmentCallBack {
+        public void onParametersFragmentInteraction(String url);
     }
 
     @Override
@@ -190,8 +146,7 @@ public class ParametersFragment extends Fragment implements View.OnClickListener
         String ligne = (String) busSpinner.getSelectedItem();
         String bus = ligne.split(" ")[0];
         String url = "http://www.transports-daniel-meyer.fr/zf/json/horaires/date/" + date + "/num/" + bus;
-        DownloadBusHoursTask task = new DownloadBusHoursTask();
-        task.execute(new String[]{url});
+        mListener.onParametersFragmentInteraction(url);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.example.jrmy.dmhours;
 
 import android.app.DialogFragment;
-import android.net.Uri;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -9,12 +8,17 @@ import android.view.MenuItem;
 import android.view.View;
 
 
-public class MainActivity extends ActionBarActivity implements HoursFragment.OnFragmentInteractionListener, ParametersFragment.OnFragmentInteractionListener {
+public class MainActivity extends ActionBarActivity implements HoursFragment.HoursFragmentCallBack, ParametersFragment.ParametersFragmentCallBack {
+
+    private ParametersFragment parametersFragment;
+    private HoursFragment hoursFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        parametersFragment = (ParametersFragment) getFragmentManager().findFragmentById(R.id.parameters_fragment);
+        hoursFragment = (HoursFragment) getFragmentManager().findFragmentById(R.id.hours_fragment);
     }
 
 
@@ -40,14 +44,18 @@ public class MainActivity extends ActionBarActivity implements HoursFragment.OnF
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onFragmentInteraction(Uri uri) {
-
-    }
-
     public void showDatePickerDialog(View v) {
         DialogFragment newFragment = new DatePickerFragment();
         newFragment.show(getFragmentManager(), "datePicker");
     }
 
+    @Override
+    public void onParametersFragmentInteraction(String url) {
+        hoursFragment.getHours(url);
+    }
+
+    @Override
+    public void onHoursFragmentInteraction() {
+
+    }
 }

@@ -8,14 +8,12 @@
 
         <fragment android:name="com.example.jrmy.dmhours.ParametersFragment"
             android:id="@+id/parameters_fragment"
-            android:layout_weight="0.5"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             tools:layout="@layout/fragment_parameters" />
 
         <fragment android:name="com.example.jrmy.dmhours.HoursFragment"
             android:id="@+id/hours_fragment"
-            android:layout_weight="0.5"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             tools:layout="@layout/fragment_hours" />
