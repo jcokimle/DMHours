@@ -24,6 +24,8 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Calendar;
 
 
@@ -67,7 +69,7 @@ public class ParametersFragment extends Fragment implements View.OnClickListener
                 String[] array_spinner = new String[json.length()];
                 ArrayAdapter adapter = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
                 for (int i = 0 ; i < json.length() - 1 ; ++i) {
-                    adapter.add(json.getJSONObject(i).getString("libelle"));
+                    adapter.add(new Line(json.getJSONObject(i).getString("SL_NOM_COM"), json.getJSONObject(i).getString("libelle")));
                 }
                 if (busSpinner != null)
                 busSpinner.setAdapter(adapter);
@@ -143,10 +145,14 @@ public class ParametersFragment extends Fragment implements View.OnClickListener
     @Override
     public void onClick(View v) {
         String date = dateEditText.getText().toString().replace('/', '-');
-        String ligne = (String) busSpinner.getSelectedItem();
-        String bus = ligne.split(" ")[0];
-        String url = "http://www.transports-daniel-meyer.fr/zf/json/horaires/date/" + date + "/num/" + bus;
-        mListener.onParametersFragmentInteraction(url);
+        String ligne = null;
+        try {
+            ligne = URLEncoder.encode(((Line) busSpinner.getSelectedItem()).getId(), "utf-8");
+            String url = "http://www.transports-daniel-meyer.fr/zf/json/horaires/date/" + date + "/num/" + ligne;
+            mListener.onParametersFragmentInteraction(url);
+        } catch (UnsupportedEncodingException e) {
+            Log.e("[ENCODING]", "Unsupported encoding exception", e);
+        }
     }
 
 }
