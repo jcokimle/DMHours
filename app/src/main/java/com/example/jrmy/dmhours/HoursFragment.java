@@ -9,7 +9,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
 
@@ -66,25 +68,55 @@ public class HoursFragment extends Fragment {
             Log.d("[GET REQUEST]", result);
             try {
                 JSONObject json = new JSONObject(result);
-                json = json.getJSONObject("A");
-                Iterator<String> it = json.keys();
-                List<String> list = new ArrayList<String>();
+                JSONObject to = json.getJSONObject("A");
+                JSONObject from = json.getJSONObject("R");
+                Iterator<?> toKeys = to.keys();
                 ArrayAdapter adapterTo = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
                 ArrayAdapter adapterFrom = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
-                while (it.hasNext()) {
-                    String st = it.next();
-                    st = st.substring(0, st.length() - 2);
-                    String[] sp1 = st.split("\\|");
-                    String id = sp1[0];
-                    String[] sp2 = sp1[1].split(" : ");
-                    String city = sp2[0];
-                    String station = sp2[1];
-                    list.add(id + "|" + station + " : " + city);
+                while (toKeys.hasNext()) {
+                    String toKey = (String) toKeys.next();
+                    String id = toKey.split("\\|")[0];
+                    String city = toKey.split("\\|")[1].split(":")[0].trim();
+                    String station = toKey.split("\\|")[1].split(":")[1].trim();
+                    String something = toKey.split("\\|")[1].split(":")[2].trim();
+                    List<Timing> timings = new ArrayList<Timing>();
+                    if (to.get(toKey) instanceof JSONObject) {
+                        JSONObject stationJSON = (JSONObject) to.get(toKey);
+                        Iterator<?> toSubkeys = stationJSON.keys();
+                        while (toSubkeys.hasNext()) {
+                            String c = (String) toSubkeys.next();
+                            String h = (String) stationJSON.get(c);
+                            if (!"-".equals(h)) {
+                                timings.add(new Timing(c, h, "A"));
+                            }
+                        }
+                    }
+                    Iterator<String> fromKeys = from.keys();
+                    String fromKey = "";
+                    while (fromKeys.hasNext()) {
+                        String tmp = fromKeys.next();
+                        if (tmp.split("\\|")[1].equals(toKey.split("\\|")[1])) {
+                            fromKey = tmp;
+                            break;
+                        }
+                    }
+                    if (!fromKey.isEmpty() && from.get(fromKey) instanceof JSONObject) {
+                        JSONObject stationJSON = (JSONObject) from.get(fromKey);
+                        Iterator<?> fromSubkeys = stationJSON.keys();
+                        while (fromSubkeys.hasNext()) {
+                            String c = (String) fromSubkeys.next();
+                            String h = (String) stationJSON.get(c);
+                            if (!"-".equals(h)) {
+                                timings.add(new Timing(c, h, "R"));
+                            }
+                        }
+                    }
+                    adapterFrom.add(new Station(id, city, station, something, timings));
+                    adapterTo.add(new Station(id, city, station, something, timings));
                 }
-                adapterTo.addAll(list);
-                adapterFrom.addAll(list);
                 toSpinner.setAdapter(adapterTo);
                 fromSpinner.setAdapter(adapterFrom);
+                displayTimings();
             } catch (JSONException e) {
                 Log.e("[JSON]", "Error parsing JSON", e);
             }
@@ -108,6 +140,24 @@ public class HoursFragment extends Fragment {
         hoursFromListView = (ListView) view.findViewById(R.id.hoursFromListView);
         toSpinner = (Spinner) view.findViewById(R.id.toSpinner);
         fromSpinner = (Spinner) view.findViewById(R.id.fromSpinner);
+        toSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                displayTimings();
+            }
+
+            public void onNothingSelected(AdapterView<?> adapterView) {
+                return;
+            }
+        });
+        fromSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                displayTimings();
+            }
+
+        public void onNothingSelected(AdapterView<?> adapterView) {
+            return;
+        }
+        });
         return view;
     }
 
@@ -136,6 +186,35 @@ public class HoursFragment extends Fragment {
 
     public interface HoursFragmentCallBack {
         public void onHoursFragmentInteraction();
+    }
+
+    private void displayTimings() {
+        Station toStation = (Station) toSpinner.getSelectedItem();
+        Station fromStation = (Station) fromSpinner.getSelectedItem();
+        List<String> left = new ArrayList<String>();
+        List<String> right = new ArrayList<String>();
+        for (Timing t1 : toStation.getTimings()) {
+            for (Timing t2 : fromStation.getTimings()) {
+                if (t1.getC().equals(t2.getC())){
+                    t2.setH(("00".equals(t2.getH().substring(0,2)))?("24:"+t2.getH().substring(3, t2.getH().length())):(t2.getH()));
+                    t1.setH(("00".equals(t1.getH().substring(0,2)))?("24:"+t1.getH().substring(3,t1.getH().length())):(t1.getH()));
+                    if (t2.getH().compareTo(t1.getH()) > 0) {
+                        left.add(t1.getH() + " " + t2.getH());// + "|" + t2.getC());
+                    }
+                    else {
+                        right.add(t2.getH() + " " + t1.getH());// + "|" + t2.getC());
+                    }
+                }
+            }
+        }
+        Collections.sort(left);
+        Collections.sort(right);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1);
+        ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1);
+        adapter.addAll(left);
+        adapter2.addAll(right);
+        hoursToListView.setAdapter(adapter);
+        hoursFromListView.setAdapter(adapter2);
     }
 
 }
