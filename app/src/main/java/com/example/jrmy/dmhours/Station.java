@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Created by Jérémy on 12/01/2015.
  */
-public class Station {
+public class Station implements Comparable<Station>{
     private String id;
     private String city;
     private String station;
@@ -59,5 +59,12 @@ public class Station {
     @Override
     public String toString() {
         return station + " : " + city;
+    }
+
+    @Override
+    public int compareTo(Station another) {
+        if (Integer.parseInt(id) < Integer.parseInt(another.getId())) return -1;
+        if (Integer.parseInt(id) > Integer.parseInt(another.getId())) return 1;
+        return 0;
     }
 }

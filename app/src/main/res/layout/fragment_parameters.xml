@@ -19,7 +19,15 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:id="@+id/busSpinner"
-            android:layout_weight="0.8" />
+            android:layout_weight="0.7" />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/refreshButton"
+            android:clickable="true"
+            android:src="@drawable/refresh"
+            android:background="@null" />
     </LinearLayout>
 
     <LinearLayout
@@ -44,18 +52,5 @@
             android:focusable="false"
             android:onClick="showDatePickerDialog" />
 
-    </LinearLayout>
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content">
-
-        <Button
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/go"
-            android:id="@+id/buttonGo"
-            android:onClick="getHours" />
     </LinearLayout>
 </LinearLayout>

@@ -1,17 +1,17 @@
 package com.example.jrmy.dmhours;
 
 import android.app.Activity;
-import android.net.Uri;
+import android.app.Fragment;
+import android.content.Context;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Spinner;
 
@@ -39,11 +39,28 @@ public class HoursFragment extends Fragment {
 
     private HoursFragmentCallBack mListener;
 
+    private class SpecialAdapter<String> extends ArrayAdapter<String> {
+        private int[] colors = new int[] { Color.GRAY, Color.LTGRAY };
+
+        public SpecialAdapter(Context context, int resource) {
+            super(context, resource);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view = super.getView(position, convertView, parent);
+            int colorPos = position % colors.length;
+            view.setBackgroundColor(colors[colorPos]);
+            return view;
+        }
+    }
+
     private class DownloadBusHoursTask extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
             String response = "";
             for (String url : urls) {
+                Log.d("[GET URL]", url);
                 DefaultHttpClient client = new DefaultHttpClient();
                 HttpGet httpGet = new HttpGet(url);
                 try {
@@ -55,7 +72,6 @@ public class HoursFragment extends Fragment {
                     while ((s = buffer.readLine()) != null) {
                         response += s;
                     }
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -71,8 +87,8 @@ public class HoursFragment extends Fragment {
                 JSONObject to = json.getJSONObject("A");
                 JSONObject from = json.getJSONObject("R");
                 Iterator<?> toKeys = to.keys();
-                ArrayAdapter adapterTo = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
-                ArrayAdapter adapterFrom = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
+                List<Station> listTo = new ArrayList<Station>();
+                List<Station> listFrom = new ArrayList<Station>();
                 while (toKeys.hasNext()) {
                     String toKey = (String) toKeys.next();
                     String id = toKey.split("\\|")[0];
@@ -111,9 +127,15 @@ public class HoursFragment extends Fragment {
                             }
                         }
                     }
-                    adapterFrom.add(new Station(id, city, station, something, timings));
-                    adapterTo.add(new Station(id, city, station, something, timings));
+                    listFrom.add(new Station(id, city, station, something, timings));
+                    listTo.add(new Station(id, city, station, something, timings));
                 }
+                Collections.sort(listFrom);
+                Collections.sort(listTo);
+                ArrayAdapter adapterTo = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
+                ArrayAdapter adapterFrom = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item);
+                adapterTo.addAll(listTo);
+                adapterFrom.addAll(listFrom);
                 toSpinner.setAdapter(adapterTo);
                 fromSpinner.setAdapter(adapterFrom);
                 displayTimings();
@@ -133,8 +155,7 @@ public class HoursFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_hours, container, false);
         hoursToListView = (ListView) view.findViewById(R.id.hoursToListView);
         hoursFromListView = (ListView) view.findViewById(R.id.hoursFromListView);
@@ -179,6 +200,7 @@ public class HoursFragment extends Fragment {
     }
 
     public void getHours(String url) {
+        Log.d("[GET HOURS]", "getHours()");
         DownloadBusHoursTask task = new DownloadBusHoursTask();
         task.execute(new String[]{url});
     }
@@ -189,8 +211,10 @@ public class HoursFragment extends Fragment {
     }
 
     private void displayTimings() {
+        Log.d("[DISPLAY TIMINGS]", "displayTimings()");
         Station toStation = (Station) toSpinner.getSelectedItem();
         Station fromStation = (Station) fromSpinner.getSelectedItem();
+        if (toStation == null || fromStation == null ) return;
         List<String> left = new ArrayList<String>();
         List<String> right = new ArrayList<String>();
         for (Timing t1 : toStation.getTimings()) {
@@ -209,10 +233,10 @@ public class HoursFragment extends Fragment {
         }
         Collections.sort(left);
         Collections.sort(right);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1);
-        ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(getActivity(), android.R.layout.simple_list_item_1);
-        adapter.addAll(left);
-        adapter2.addAll(right);
+        SpecialAdapter<String> adapter = new SpecialAdapter<String>(getActivity(), android.R.layout.simple_list_item_1);
+        SpecialAdapter<String> adapter2 = new SpecialAdapter<String>(getActivity(), android.R.layout.simple_list_item_1);
+        adapter.addAll(right);
+        adapter2.addAll(left);
         hoursToListView.setAdapter(adapter);
         hoursFromListView.setAdapter(adapter2);
     }
